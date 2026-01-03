@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Extreme Vault</title>
+
+<style>
+*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+body{
+    background:#f2f4f7;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.container{
+    width:360px;
+    background:#fff;
+    border-radius:14px;
+    padding:16px;
+    box-shadow:0 10px 25px rgba(0,0,0,.15);
+}
+.title{text-align:center;font-size:20px;font-weight:bold;margin-bottom:10px}
+
+/* CALCULATOR */
+.display{
+    background:#eef1f5;
+    height:60px;
+    border-radius:8px;
+    padding:10px;
+    font-size:26px;
+    text-align:right;
+}
+.buttons{
+    margin-top:12px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+}
+button{
+    height:48px;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    background:#f4f6f9;
+    cursor:pointer;
+}
+button:hover{background:#e1e5ea}
+.operator{background:#dde3ea;font-weight:bold}
+.equal{grid-column:span 2;background:#4caf50;color:#fff}
+.clear{background:#ff5252;color:#fff}
+.delete{background:#ffb300;color:#fff}
+
+/* VAULT */
+#vault{display:none}
+.tabs{
+    display:flex;
+    gap:6px;
+    margin-top:8px;
+}
+.tab{
+    flex:1;
+    height:36px;
+    background:#eef1f5;
+    border-radius:6px;
+    font-size:14px;
+}
+.tab.active{
+    background:#4caf50;
+    color:white;
+}
+.section{margin-top:10px}
+input,textarea{
+    width:100%;
+    padding:8px;
+    margin-top:6px;
+    border-radius:6px;
+    border:1px solid #ccc;
+}
+.save{
+    background:#4caf50;
+    color:white;
+    width:100%;
+    margin-top:6px;
+}
+.logout{
+    background:#ff5252;
+    color:white;
+    width:100%;
+    margin-top:10px;
+}
+.list{
+    max-height:150px;
+    overflow-y:auto;
+    margin-top:6px;
+}
+.card{
+    background:#eef1f5;
+    padding:6px;
+    border-radius:6px;
+    margin-bottom:6px;
+    font-size:14px;
+}
+.card small{color:#555}
+.card button{
+    height:28px;
+    background:#ff5252;
+    color:white;
+    font-size:12px;
+    margin-top:4px;
+}
+img,video{
+    max-width:100%;
+    border-radius:6px;
+    margin-top:4px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- CALCULATOR -->
+<div class="container" id="calculator">
+    <div class="title">Extreme Vault</div>
+    <div class="display" id="display">0</div>
+
+    <div class="buttons">
+        <button class="clear" onclick="clr()">AC</button>
+        <button class="delete" onclick="del()">⌫</button>
+        <button class="operator" onclick="add('%')">%</button>
+        <button class="operator" onclick="add('/')">÷</button>
+
+        <button onclick="add('7')">7</button>
+        <button onclick="add('8')">8</button>
+        <button onclick="add('9')">9</button>
+        <button class="operator" onclick="add('*')">×</button>
+
+        <button onclick="add('4')">4</button>
+        <button onclick="add('5')">5</button>
+        <button onclick="add('6')">6</button>
+        <button class="operator" onclick="add('-')">−</button>
+
+        <button onclick="add('1')">1</button>
+        <button onclick="add('2')">2</button>
+        <button onclick="add('3')">3</button>
+        <button class="operator" onclick="add('+')">+</button>
+
+        <button onclick="add('0')">0</button>
+        <button onclick="add('.')">.</button>
+        <button class="equal" onclick="calc()">=</button>
+    </div>
+</div>
+
+<!-- VAULT -->
+<div class="container" id="vault">
+    <div class="title">Vault</div>
+
+    <input type="password" id="newPin" placeholder="Change PIN">
+    <button class="save" onclick="changePin()">Save PIN</button>
+
+    <div class="tabs">
+        <button class="tab active" onclick="openTab('notes')">Notes</button>
+        <button class="tab" onclick="openTab('images')">Images</button>
+        <button class="tab" onclick="openTab('videos')">Videos</button>
+    </div>
+
+    <!-- NOTES -->
+    <div class="section" id="notes">
+        <textarea id="noteText" placeholder="Write note"></textarea>
+        <button class="save" onclick="saveNote()">Save Note</button>
+        <input placeholder="Search notes" oninput="searchNotes(this.value)">
+        <div class="list" id="notesList"></div>
+    </div>
+
+    <!-- IMAGES -->
+    <div class="section" id="images" style="display:none">
+        <input type="file" accept="image/*" onchange="saveImage(this)">
+        <div class="list" id="imagesList"></div>
+    </div>
+
+    <!-- VIDEOS -->
+    <div class="section" id="videos" style="display:none">
+        <input type="file" accept="video/*" onchange="saveVideo(this)">
+        <div class="list" id="videosList"></div>
+    </div>
+
+    <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+<script>
+let display=document.getElementById("display");
+let calcBox=document.getElementById("calculator");
+let vaultBox=document.getElementById("vault");
+
+let pin=localStorage.getItem("pin")||"1234";
+let notes=JSON.parse(localStorage.getItem("notes")||"[]");
+let images=JSON.parse(localStorage.getItem("images")||"[]");
+let videos=JSON.parse(localStorage.getItem("videos")||"[]");
+
+function add(v){display.innerText=display.innerText==="0"?v:display.innerText+v}
+function clr(){display.innerText="0"}
+function del(){display.innerText=display.innerText.length>1?display.innerText.slice(0,-1):"0"}
+
+function calc(){
+    if(display.innerText===pin){
+        calcBox.style.display="none";
+        vaultBox.style.display="block";
+        renderAll();
+        clr(); return;
+    }
+    try{display.innerText=eval(display.innerText.replace('%','/100'))}
+    catch{display.innerText="Error"}
+}
+
+/* VAULT */
+function changePin(){
+    let p=newPin.value;
+    if(p.length>=4){
+        pin=p;localStorage.setItem("pin",p);
+        alert("PIN updated");
+        newPin.value="";
+    }
+}
+function openTab(t){
+    ["notes","images","videos"].forEach(id=>{
+        document.getElementById(id).style.display=id===t?"block":"none";
+    });
+    document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+    event.target.classList.add("active");
+}
+
+/* NOTES */
+function saveNote(){
+    let t=noteText.value;
+    if(!t)return;
+    notes.push({text:t,time:new Date().toLocaleString()});
+    localStorage.setItem("notes",JSON.stringify(notes));
+    noteText.value="";
+    renderNotes(notes);
+}
+function renderNotes(arr){
+    notesList.innerHTML="";
+    arr.forEach((n,i)=>{
+        notesList.innerHTML+=
+        `<div class="card">${n.text}<br><small>${n.time}</small>
+        <button onclick="delNote(${i})">Delete</button></div>`;
+    });
+}
+function delNote(i){notes.splice(i,1);localStorage.setItem("notes",JSON.stringify(notes));renderNotes(notes)}
+function searchNotes(v){
+    renderNotes(notes.filter(n=>n.text.toLowerCase().includes(v.toLowerCase())));
+}
+
+/* IMAGE */
+function saveImage(i){
+    let r=new FileReader();
+    r.onload=()=>{images.push(r.result);localStorage.setItem("images",JSON.stringify(images));renderImages()}
+    r.readAsDataURL(i.files[0]);
+}
+function renderImages(){
+    imagesList.innerHTML="";
+    images.forEach((img,i)=>{
+        imagesList.innerHTML+=
+        `<div class="card"><img src="${img}">
+        <button onclick="delImg(${i})">Delete</button></div>`;
+    });
+}
+function delImg(i){images.splice(i,1);localStorage.setItem("images",JSON.stringify(images));renderImages()}
+
+/* VIDEO */
+function saveVideo(i){
+    let r=new FileReader();
+    r.onload=()=>{videos.push(r.result);localStorage.setItem("videos",JSON.stringify(videos));renderVideos()}
+    r.readAsDataURL(i.files[0]);
+}
+function renderVideos(){
+    videosList.innerHTML="";
+    videos.forEach((v,i)=>{
+        videosList.innerHTML+=
+        `<div class="card"><video controls src="${v}"></video>
+        <button onclick="delVid(${i})">Delete</button></div>`;
+    });
+}
+function delVid(i){videos.splice(i,1);localStorage.setItem("videos",JSON.stringify(videos));renderVideos()}
+
+function renderAll(){renderNotes(notes);renderImages();renderVideos()}
+function logout(){vaultBox.style.display="none";calcBox.style.display="block"}
+</script>
+
+</body>
+</html>
